@@ -28,7 +28,10 @@ function PostinDetail(props) {
     fetchPosts();
   }, [data, comments]);
 
-  const post = posts?.find((e) => e.id == postId);
+  const post = posts?.find((e) =>
+    e.id?.toString() === postId || e._id?.toString() === postId
+  );
+  
   const { body, status, title, topic } = post || {};
 
   const handleClick = async () => {

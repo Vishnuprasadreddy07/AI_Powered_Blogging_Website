@@ -15,7 +15,6 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate, Link } from "react-router-dom";
-import usersData from "../Data.json"; // adjust path if needed
 
 const defaultTheme = createTheme();
 
@@ -36,39 +35,40 @@ export default function Login(props) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
-  
-  const handleSubmit = (event) => {
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const email = data.get("email");
     const password = data.get("password");
 
-    const users = JSON.parse(localStorage.getItem("users")) || usersData;
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    for (let i = 0; i < users.length; i++) {
-      if (
-        users[i].email === email &&
-        users[i].password === password &&
-        users[i].status === "active"
-      ) {
-        if (users[i].name) {
-          setUserName(users[i].name);
-          setLoggedIn(true);
-          localStorage.setItem("loggedIn", true);
-          localStorage.setItem("userName", users[i].name);
-          localStorage.setItem("type", users[i].type);
-          localStorage.setItem("status", users[i].status);
-          localStorage.setItem("email", users[i].email);
-          if (props.handleClose) props.handleClose();
-          navigate("/dashboard"); // change to whatever route you use post-login
-          return;
-        }
+      const result = await response.json();
+
+      if (response.status === 200) {
+        setUserName(result.name);
+        setLoggedIn(true);
+
+        localStorage.setItem("loggedIn", true);
+        localStorage.setItem("userName", result.name);
+        localStorage.setItem("type", result.type);
+        localStorage.setItem("status", result.status);
+        localStorage.setItem("email", result.email);
+
+        if (props.handleClose) props.handleClose();
+        navigate("/"); // Or your desired page
+      } else {
+        alert(result.message || "Login failed");
       }
-    }
-
-    const s = localStorage.getItem("loggedIn");
-    if (s === "false" || s === null) {
-      alert("User credentials invalid or User is disabled");
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Error connecting to server");
     }
   };
 

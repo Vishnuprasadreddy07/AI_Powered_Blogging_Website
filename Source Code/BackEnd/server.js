@@ -39,6 +39,16 @@ const postSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
+const userSchema = new mongoose.Schema({
+  id: { type: Number, required: true, unique: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  status: { type: String, default: "active" },
+  type: { type: String, required: true },
+  password: { type: String, required: true },
+});
+
+const User = mongoose.model("User", userSchema);
 
 
 
@@ -66,6 +76,17 @@ async function geocodeAddress(address) {
     throw error;
   }
 }
+
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Error fetching users", error });
+  }
+});
+
 // Fetch all posts
 app.get("/api/posts", async (req, res) => {
   try {
@@ -73,6 +94,39 @@ app.get("/api/posts", async (req, res) => {
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: "Error fetching posts", error });
+  }
+});
+
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { name, email, password, type, status } = req.body;
+
+    if (!name || !email || !password || !type) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    const userCount = await User.countDocuments();
+    const newUser = new User({
+      id: userCount + 1,
+      name,
+      email,
+      password,
+      type,
+      status: status || "active",
+    });
+
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully", user: newUser });
+  } catch (error) {
+    console.error("Error in signup API:", error);
+    res.status(500).json({ message: "Error registering user", error });
   }
 });
 
@@ -107,6 +161,33 @@ async function generateOpenAISummary(post) {
     throw error;
   }
 }
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email, password });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    if (user.status !== "active") {
+      return res.status(403).json({ message: "User is disabled" });
+    }
+
+    return res.status(200).json({
+      message: "Login successful",
+      name: user.name,
+      email: user.email,
+      type: user.type,
+      status: user.status,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Server error during login" });
+  }
+});
 
 app.post("/api/get-summary", async (req, res) => {
   const { post } = req.body;

@@ -1,0 +1,35 @@
+[
+    {
+      "id": 1,
+      "name": "Vishnu",
+      "email": "vishnuprasadreddy444@gmail.com",
+      "status": "active",
+      "type": "Administrator",
+      "password": "GG"
+    },
+    {
+      "id": 2,
+      "name": "Bob",
+      "email": "bob@example.com",
+      "status": "active",
+      "type": "Moderator",
+      "password": "GG"
+    },
+    {
+      "id": 3,
+      "name": "Charlie",
+      "email": "charlie@example.com",
+      "status": "active",
+      "type": "Student",
+      "password": "GG"
+    },
+    {
+      "id": 4,
+      "name": "4",
+      "email": "4",
+      "status": "active",
+      "type": "Student",
+      "password": "4"
+    }
+  ]
+  

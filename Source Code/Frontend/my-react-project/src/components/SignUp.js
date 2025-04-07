@@ -14,7 +14,6 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate, Link } from "react-router-dom";
-import usersData from "../Data.json"; // Adjust path if needed
 
 const theme = createTheme();
 
@@ -33,32 +32,30 @@ export default function SignUp() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const existingUsers =
-      JSON.parse(localStorage.getItem("users")) || usersData;
+    try {
+      const response = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    const emailExists = existingUsers.some(
-      (user) => user.email === form.email
-    );
+      const result = await response.json();
 
-    if (emailExists) {
-      alert("User with this email already exists.");
-      return;
+      if (response.status === 201) {
+        alert("User registered successfully!");
+        navigate("/");
+      } else {
+        alert(result.message || "Signup failed.");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      alert("Error connecting to the server.");
     }
-
-    const newUser = {
-      id: existingUsers.length + 1,
-      ...form,
-    };
-
-    const updatedUsers = [...existingUsers, newUser];
-
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-    alert("User registered successfully!");
-    navigate("/");
   };
 
   return (

@@ -1,6 +1,3 @@
-import React from "react";
-import Data from "../../Data.json";
-
 class User {
   constructor(id, name, email, status, type, password) {
     this.id = id;
@@ -9,29 +6,33 @@ class User {
     this.status = status;
     this.type = type;
     this.password = password;
+    this.state = []; // initialize local state in the instance
   }
 
   parseData = async () => {
-    for (let i = 0; i < Data.length; i++) {
-      this.state.push(Data[i]);
+    try {
+      const response = await fetch("http://localhost:5000/api/users");
+      if (!response.ok) throw new Error("Failed to fetch users");
+
+      const data = await response.json();
+      this.state = data.map(
+        (user) =>
+          new User(
+            user.id,
+            user.name,
+            user.email,
+            user.status,
+            user.type,
+            user.password
+          )
+      );
+    } catch (error) {
+      console.error("Error parsing data:", error);
     }
   };
 
   getUsers = () => {
-    const users = [];
-    for (let i = 0; i < Data.length; i++) {
-      users.push(
-        new User(
-          Data[i].id,
-          Data[i].name,
-          Data[i].email,
-          Data[i].status,
-          Data[i].type,
-          Data[i].password
-        )
-      );
-    }
-    return users;
+    return this.state;
   };
 }
 

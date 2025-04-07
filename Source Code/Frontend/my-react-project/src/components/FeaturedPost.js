@@ -13,7 +13,8 @@ function FeaturedPost(props) {
   // console.log(post);
   const navigate = useNavigate();
   const handleClick = () => {
-    navigate(`/post/${post.id}`);
+    console.log(post);
+    navigate(`/post/${post.id || post._id}`);
   };
 
   return (
