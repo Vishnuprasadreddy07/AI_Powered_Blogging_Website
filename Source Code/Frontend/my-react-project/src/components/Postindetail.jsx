@@ -1,49 +1,112 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import Datac from "./Datac";
+import { useLocation } from "react-router-dom";
 import { Button, TextField } from "@mui/material";
 
-function PostinDetail(props) {
-  const { postId } = useParams();
-  const { data } = props;
-  const [reload, setReload] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [posts, setPosts] = useState(null);
+function PostinDetail() {
+  const location = useLocation();
+  const { post: locationPost } = location.state || {};
+
+  const [post, setPost] = useState(locationPost || null);
+  const [comments, setComments] = useState(locationPost?.comments || []);
   const [reply, setReply] = useState("");
-  const [summary, setSummary] = useState(""); // New state for summary
-  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [summary, setSummary] = useState("");
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const loggedIn = localStorage.getItem("loggedIn");
 
-  const fetchPosts = async () => {
+  const fetchPostFromServer = async (title, body) => {
     try {
-      const fetchedPosts = await data.getPosts();
-      setPosts(fetchedPosts);
+      const response = await fetch("http://localhost:5000/api/get-post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, body }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Post not found or error fetching it");
+      }
+
+      const matchedPost = await response.json();
+      setPost(matchedPost);
+      setComments(matchedPost.comments || []);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      console.error("❌ Error fetching exact post:", error);
     }
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, [data, comments]);
-
-  const post = posts?.find((e) =>
-    e.id?.toString() === postId || e._id?.toString() === postId
-  );
+    const loadPost = async () => {
+      let title = locationPost?.title;
+      let body = locationPost?.body;
   
-  const { body, status, title, topic } = post || {};
+      // Case 1: If locationPost exists (navigated from homepage)
+      if (locationPost) {
+        localStorage.setItem("postTitle", title);
+        localStorage.setItem("postBody", body);
+      } else {
+        // Case 2: Reloaded the page (fallback to localStorage)
+        title = localStorage.getItem("postTitle");
+        body = localStorage.getItem("postBody");
+      }
+  
+      // Fetch from backend if title/body are available
+      if (title && body) {
+        await fetchPostFromServer(title, body);
+      }
+    };
+  
+    loadPost();
+  
+    return () => {
+      localStorage.removeItem("postTitle");
+      localStorage.removeItem("postBody");
+    };
+  }, []);
+  
 
   const handleClick = async () => {
     const name = localStorage.getItem("userName");
-    const comment = {
-      postId,
+    const trimmedReply = reply.trim();
+
+    if (!post || !post.title || !post.body) {
+      alert("Post data is incomplete.");
+      return;
+    }
+
+    if (!name || !trimmedReply) {
+      alert("Please fill in the reply before submitting.");
+      return;
+    }
+
+    const payload = {
+      title: post.title,
+      body: post.body,
       author: name,
-      text: reply,
+      text: trimmedReply,
     };
-    await data.addComment(comment);
-    setComments((comments) => [...comments, comment]);
-    setReply("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/add-comment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add comment");
+      }
+
+      // Re-fetch latest post after comment added
+      await fetchPostFromServer(post.title, post.body);
+      setReply("");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("Error: " + error.message);
+    }
   };
 
   const handleFillTextField = async () => {
@@ -87,32 +150,24 @@ function PostinDetail(props) {
       }
 
       const result = await response.json();
-      setSummary(result.summary); // Assume backend returns { summary: "...text..." }
+      setSummary(result.summary);
     } catch (error) {
       console.error("Error getting summary from backend:", error);
     }
   };
 
-  useEffect(() => {
-    const updatedPost = posts?.find((e) => e.id == postId);
-    if (updatedPost) {
-      const updatedComments = updatedPost.comments;
-      setComments(updatedComments);
-    }
-  }, [reload, postId, posts]);
+  if (!post) {
+    return <p>Post not found or not passed correctly.</p>;
+  }
+
+  const { title, topic, body, status } = post;
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      {post ? (
-        <>
-          <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>{title}</h1>
-          <h2 style={{ fontSize: "18px", marginBottom: "5px" }}>Author: {status}</h2>
-          <h3 style={{ fontSize: "16px", fontStyle: "italic", marginBottom: "0" }}>Topic: {topic}</h3>
-          <p style={{ fontSize: "16px", lineHeight: "1.6", marginBottom: "20px" }}>{body}</p>
-        </>
-      ) : (
-        <p>Loading...</p>
-      )}
+      <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>{title}</h1>
+      <h2 style={{ fontSize: "18px", marginBottom: "5px" }}>Author: {status}</h2>
+      <h3 style={{ fontSize: "16px", fontStyle: "italic", marginBottom: "0" }}>Topic: {topic}</h3>
+      <p style={{ fontSize: "16px", lineHeight: "1.6", marginBottom: "20px" }}>{body}</p>
 
       {loggedIn && (
         <>
@@ -132,9 +187,6 @@ function PostinDetail(props) {
               padding: "10px 20px",
               fontSize: "16px",
               fontWeight: "bold",
-              border: "none",
-              cursor: "pointer",
-              textDecoration: "none",
               marginRight: "10px",
             }}
             onClick={handleClick}
@@ -149,16 +201,12 @@ function PostinDetail(props) {
               padding: "10px 20px",
               fontSize: "16px",
               fontWeight: "bold",
-              border: "none",
-              cursor: "pointer",
-              textDecoration: "none",
               marginRight: "10px",
             }}
             onClick={handleFillTextField}
           >
             {showAdditionalInfo ? "Disable reply by ChatGPT" : "Generate reply by ChatGPT"}
           </Button>
-          {/* New Summary Button */}
           <Button
             style={{
               backgroundColor: "#6c63ff",
@@ -167,9 +215,6 @@ function PostinDetail(props) {
               padding: "10px 20px",
               fontSize: "16px",
               fontWeight: "bold",
-              border: "none",
-              cursor: "pointer",
-              textDecoration: "none",
               marginTop: "10px",
             }}
             onClick={handleGetSummary}

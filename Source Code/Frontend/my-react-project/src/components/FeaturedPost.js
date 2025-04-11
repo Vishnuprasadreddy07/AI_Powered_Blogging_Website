@@ -13,9 +13,25 @@ function FeaturedPost(props) {
   // console.log(post);
   const navigate = useNavigate();
   const handleClick = () => {
-    console.log(post);
-    navigate(`/post/${post.id || post._id}`);
+    const { id, _id, title, body, topic, status, comments, date } = post;
+  
+    // Clone only serializable fields
+    navigate("/post", {
+      state: {
+        post: {
+          id,
+          _id,
+          title,
+          body,
+          topic,
+          status,
+          comments,
+          date,
+        },
+      },
+    });
   };
+  
 
   return (
     <Grid item xs={12} md={6}>

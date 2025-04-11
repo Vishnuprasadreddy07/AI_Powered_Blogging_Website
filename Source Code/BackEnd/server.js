@@ -50,8 +50,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-
-
 const Post = mongoose.model("Post", postSchema);
 async function geocodeAddress(address) {
   const apiKey = "AIzaSyDjyfpL_xiJegt1s9icwZoYzzlPkftcMHE";
@@ -76,6 +74,27 @@ async function geocodeAddress(address) {
     throw error;
   }
 }
+app.post("/api/get-post", async (req, res) => {
+  try {
+    const { title, body } = req.body;
+
+    if (!title || !body) {
+      return res.status(400).json({ message: "Missing title or body" });
+    }
+
+    const post = await Post.findOne({ title, body });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json(post);
+  } catch (error) {
+    console.error("Error in /api/get-post:", error);
+    res.status(500).json({ message: "Server error while fetching post", error });
+  }
+});
+
 
 app.get("/api/users", async (req, res) => {
   try {
@@ -258,14 +277,20 @@ app.post("/api/chatbot", async (req, res) => {
 // Add a comment to a post
 app.post("/api/add-comment", async (req, res) => {
   try {
-    const { postId, author, text } = req.body;
+    const { title, body, author, text } = req.body;
 
-    if (!postId || !text || !author) {
+    console.log("Incoming Comment Payload:");
+    console.log("Title:", title);
+    console.log("Body:", body);
+    console.log("Author:", author);
+    console.log("Text:", text);
+
+    if (!title || !body || !author || !text) {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    const updatedPost = await Post.findByIdAndUpdate(
-      postId,
+    const updatedPost = await Post.findOneAndUpdate(
+      { title, body },
       { $push: { comments: { text, author, date: new Date() } } },
       { new: true }
     );
@@ -280,6 +305,7 @@ app.post("/api/add-comment", async (req, res) => {
     res.status(500).json({ message: "Error adding comment", error });
   }
 });
+
 
 app.post("/api/generate-reply", async (req, res) => {
   try {

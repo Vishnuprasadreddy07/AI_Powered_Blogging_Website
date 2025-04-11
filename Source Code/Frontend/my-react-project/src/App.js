@@ -69,7 +69,7 @@ function App() {
               <DeletePost data={data} deletePost={(id) => deletePost(id)} triggerRefresh={triggerRefresh} />
             }
           />
-          <Route path="/post/:postId" element={<PostinDetail data={data} />} />
+          <Route path="/post" element={<PostinDetail data={data} />} />
           <Route
             path="/logined/createpost"
             element={<CreatePost data={data} triggerRefresh={triggerRefresh} selectedSection={selectedSection}
