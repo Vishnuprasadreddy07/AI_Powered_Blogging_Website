@@ -1,13 +1,47 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function UsersPage({ data }) {
-  const [users, setUsers] = useState(data.getUsers());
-  const naviagte = useNavigate();
-  const handleStatusUpdate = (userId) => {
-    const updatedUsers = data.toggleUserStatus(userId);
-    setUsers(updatedUsers);
-    naviagte("/");
+function UsersPage() {
+  const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
+
+  // Fetch users from the backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/users");
+        const data = await res.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleStatusUpdate = async (userId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${userId}/toggle-status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update user status");
+      }
+
+      const updatedUser = await res.json();
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => (user.id === updatedUser.user.id ? updatedUser.user : user))
+      );
+
+      navigate("/");
+    } catch (error) {
+      console.error("Error updating user status:", error);
+    }
   };
 
   return (
@@ -65,9 +99,6 @@ const buttonStyle = {
   border: "none",
   color: "white",
   padding: "10px 20px",
-  textAlign: "center",
-  textDecoration: "none",
-  display: "inline-block",
   fontSize: "16px",
   margin: "4px 2px",
   cursor: "pointer",

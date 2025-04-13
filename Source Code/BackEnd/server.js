@@ -74,6 +74,28 @@ async function geocodeAddress(address) {
     throw error;
   }
 }
+
+// Toggle user status
+app.put("/api/users/:id/toggle-status", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id); // using custom numeric `id`, not `_id`
+    const user = await User.findOne({ id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Toggle status
+    user.status = user.status === "active" ? "disabled" : "active";
+    await user.save();
+
+    res.status(200).json({ message: "User status updated", user });
+  } catch (error) {
+    console.error("Error toggling user status:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
 app.post("/api/get-post", async (req, res) => {
   try {
     const { title, body } = req.body;
@@ -94,7 +116,6 @@ app.post("/api/get-post", async (req, res) => {
     res.status(500).json({ message: "Server error while fetching post", error });
   }
 });
-
 
 app.get("/api/users", async (req, res) => {
   try {
