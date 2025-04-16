@@ -15,6 +15,7 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate, Link } from "react-router-dom";
+import loginBg from "../components/bgimage.png"; // Adjust path if needed
 
 const defaultTheme = createTheme();
 
@@ -82,11 +83,11 @@ export default function Login(props) {
           sm={4}
           md={7}
           sx={{
-            backgroundImage: "url(https://source.unsplash.com/random?wallpapers)",
+            backgroundImage: `url(${loginBg})`,
             backgroundRepeat: "no-repeat",
             backgroundColor: (t) =>
               t.palette.mode === "light" ? t.palette.grey[50] : t.palette.grey[900],
-            backgroundSize: "cover",
+            backgroundSize: "contain",
             backgroundPosition: "center",
           }}
         />
@@ -149,9 +150,9 @@ export default function Login(props) {
               </Button>
               <Grid container>
                 <Grid item xs>
-                  <MuiLink href="#" variant="body2">
+                  {/* <MuiLink href="#" variant="body2">
                     Forgot password?
-                  </MuiLink>
+                  </MuiLink> */}
                 </Grid>
                 <Grid item>
                   <Link to="/signup" variant="body2">
