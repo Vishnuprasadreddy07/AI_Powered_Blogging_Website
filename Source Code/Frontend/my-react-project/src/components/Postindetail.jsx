@@ -205,7 +205,7 @@ function PostinDetail() {
             }}
             onClick={handleFillTextField}
           >
-            {showAdditionalInfo ? "Disable reply by ChatGPT" : "Generate reply by ChatGPT"}
+            {showAdditionalInfo ? "Disable reply" : "Generate reply"}
           </Button>
           <Button
             style={{
@@ -219,7 +219,7 @@ function PostinDetail() {
             }}
             onClick={handleGetSummary}
           >
-            Get summary using OpenAI
+            Get summary
           </Button>
         </>
       )}
