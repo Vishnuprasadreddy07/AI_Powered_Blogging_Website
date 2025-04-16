@@ -222,7 +222,7 @@ const RecommendationPage = () => {
   return (
     <div style={{ padding: "1rem" }}>
       <Typography variant="h6" gutterBottom style={{ marginBottom: "1rem" }}>
-        OpenAI Recommendations
+        AI Recommendations
       </Typography>
       <div
         id="map"
